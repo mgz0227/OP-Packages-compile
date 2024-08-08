@@ -190,12 +190,30 @@ jobs:
     - name: Prepare
       run: |
         cd openwrt
-        mv -f package/feeds/miaogongzi miaogongzi.b
-        mv -f feeds/packages/lang feeds/packages/lang.b
-        mv -f feeds/packages feeds/packages.b
-        mkdir package/feeds/miaogongzi
-        cp -rf miaogongzi.b/{wxbase,lib*,rapidjson,nftables,jpcre2,toml11,gn,curl,quickjspp,qt*,libtorrent*,openssl,mbedtls,ppp,cups,nftables} package/feeds/miaogongzi/ || true
-
+    
+        # 如果目录存在，才执行重命名操作
+        if [ -d "package/feeds/miaogongzi" ]; then
+          mv -f package/feeds/miaogongzi miaogongzi.b
+        fi
+    
+        # 如果 lang 目录存在，才执行重命名操作
+        if [ -d "feeds/packages/lang" ]; then
+          mv -f feeds/packages/lang feeds/packages/lang.b
+        fi
+    
+        # 如果 packages 目录存在，才执行重命名操作
+        if [ -d "feeds/packages" ]; then
+          mv -f feeds/packages feeds/packages.b
+        fi
+    
+        # 创建新的目录
+        mkdir -p package/feeds/miaogongzi
+    
+        # 复制文件，如果源目录存在的话
+        if [ -d "miaogongzi.b" ]; then
+          cp -rf miaogongzi.b/{wxbase,lib*,rapidjson,nftables,jpcre2,toml11,gn,curl,quickjspp,qt*,libtorrent*,openssl,mbedtls,ppp,cups,nftables} package/feeds/miaogongzi/ || true
+        fi
+    
     - name: Compile the firmware
       run: |
         cd openwrt
