@@ -69,7 +69,7 @@ jobs:
           -H "Accept: application/vnd.github.everest-preview+json" \
           -H "Authorization: token ${{ env.REPO_TOKEN }}" \
           -d '{"event_type": "x86_64 ${{ github.event.inputs.packages }}", "client_payload": {"target": "x86_64"}}'
-              - name: Delete workflow runs
+    - name: Delete workflow runs
       uses: GitRML/delete-workflow-runs@main
       continue-on-error: true
       with:
