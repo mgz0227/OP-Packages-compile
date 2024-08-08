@@ -24,7 +24,7 @@ on:
         default: ''
 
 env:
-  REPO_TOKEN: ${{ secrets.TOKEN_kiddin9 }}
+  REPO_TOKEN: ${{ secrets.TOKEN_MGZ0227 }}
   TZ: Asia/Shanghai
 
 jobs:
@@ -84,5 +84,5 @@ jobs:
         keep_latest: 100
         delete_tags: true
       env:
-        GITHUB_TOKEN: ${{ secrets.REPO_TOKEN_kiddin9 }}
+        GITHUB_TOKEN: ${{ secrets.TOKEN_MGZ0227 }}
        
