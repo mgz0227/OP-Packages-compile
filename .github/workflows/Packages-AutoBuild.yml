@@ -333,7 +333,7 @@ jobs:
         SSH_PRIVATE_KEY: ${{ env.SSH_PRIVATE_KEY }}
         ARGS: "-avzr"
         SOURCE: "packages/"
-        remoteHost: ${{ secrets.SERVER_HOST }}
+        REMOTE_HOST: ${{ secrets.SERVER_HOST }}
         REMOTE_USER: root
         REMOTE_PORT: ${{ secrets.SERVER_PORT }}
         TARGET: "/www/wwwroot/cdn.miaogongzi.cc/openwrt/23.05/packages/${{matrix.target}}/miaogongzi/"
