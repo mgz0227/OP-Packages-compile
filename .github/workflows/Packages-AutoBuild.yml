@@ -308,7 +308,13 @@ jobs:
         name: ${{ env.NAME }}
         tag_name: ${{ env.date }}_${{matrix.target}}
         body_path: release.txt
-
+    - name: Upload packages for artifact
+      uses: actions/upload-artifact@main
+      continue-on-error: true
+      if: env.UPLOAD_FIRMWARE_FOR_ARTIFACT == 'true'
+      with:
+        name: ${{ env.date3 }} ${{matrix.target}}
+        path: packages
     - name: deploy files to server
       uses: easingthemes/ssh-deploy@main
       if: env.SSH_PRIVATE_KEY && ! contains(github.event.action, 'noser')
@@ -321,13 +327,7 @@ jobs:
         REMOTE_PORT: ${{ secrets.SERVER_PORT }}
         TARGET: "/www/wwwroot/cdn.miaogongzi.cc/openwrt/23.05/packages/${{matrix.target}}/miaogongzi/"
 
-    - name: Upload packages for artifact
-      uses: actions/upload-artifact@main
-      continue-on-error: true
-      if: env.UPLOAD_FIRMWARE_FOR_ARTIFACT == 'true'
-      with:
-        name: ${{ env.date3 }} ${{matrix.target}}
-        path: packages
+
 
     - name: remote ssh command
       uses: appleboy/ssh-action@master
