@@ -291,7 +291,7 @@ jobs:
       continue-on-error: true
       run: |
         echo -e "墙内加速下载 🚀:\n" >> release.txt
-        echo -e "[阿里云] (https://cdn.miaogongzi.cc/openwrt/23.05/packages/${{matrix.target}}/ ☁)\n" >> release.txt
+        echo -e "[阿里云] (https://op.miaogongzi.cc/23.05/packages/${{matrix.target}}/ ☁)\n" >> release.txt
         [ ${{ env.WETRANS }} ] && echo -e "[WeTransfer] (${{ env.WETRANS }} 🗽)\n" >> release.txt
         [ ${{ env.COWURL }} ] && echo -e "[奶牛上传] (${{ env.COWURL }} 🐮)\n" >> release.txt
         [ ${{ env.NOTICE }} ] && echo -e "${{ env.NOTICE }}" >> release.txt || true
@@ -328,7 +328,7 @@ jobs:
         REMOTE_HOST: ${{ secrets.SERVER_HOST }}
         REMOTE_USER: root
         REMOTE_PORT: ${{ secrets.SERVER_PORT }}
-        TARGET: "/www/wwwroot/cdn.miaogongzi.cc/openwrt/23.05/packages/miaogongzi/"
+        TARGET: "/www/wwwroot/op.miaogongzi.cc/23.05/packages/miaogongzi/"
 
 
 
@@ -341,6 +341,6 @@ jobs:
         port: ${{ secrets.SERVER_PORT }}
         key: ${{ env.SSH_PRIVATE_KEY }}
         script: |
-          # cp -R /www/wwwroot/cdn.miaogongzi.cc/openwrt/packages/keep/common/* /www/wwwroot/cdn.miaogongzi.cc/openwrt/packages/${{matrix.target}}/
-          # cp -R /www/wwwroot/cdn.miaogongzi.cc/openwrt/packages/keep/${{matrix.target}}/* /www/wwwroot/dcdn.miaogongzi.cc/openwrt/packages/${{matrix.target}}/
+          # cp -R /www/wwwroot/op.miaogongzi.cc/packages/keep/common/* /www/wwwroot/op.miaogongzi.cc/packages/${{matrix.target}}/
+          # cp -R /www/wwwroot/op.miaogongzi.cc/packages/keep/${{matrix.target}}/* /www/wwwroot/op.miaogongzi.cc/packages/${{matrix.target}}/
           bash opkg ${{matrix.target}} &
