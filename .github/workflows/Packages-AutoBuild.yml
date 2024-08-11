@@ -328,7 +328,7 @@ jobs:
         REMOTE_HOST: ${{ secrets.SERVER_HOST }}
         REMOTE_USER: root
         REMOTE_PORT: ${{ secrets.SERVER_PORT }}
-        TARGET: "/www/wwwroot/op.miaogongzi.cc/23.05/packages/miaogongzi/"
+        TARGET: "/www/wwwroot/op.miaogongzi.cc/23.05/packages/${{matrix.target}}/miaogongzi/"
 
 
 
