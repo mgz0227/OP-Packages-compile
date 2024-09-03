@@ -30,7 +30,7 @@ env:
 jobs:
   build:
     if: github.event.repository.owner.id == github.event.sender.id || ! github.event.sender.id
-    runs-on: Ubuntu-22.04
+    runs-on: Ubuntu-latest
     #runs-on: self-hosted
     steps:
     - name: cancel running workflows
@@ -38,7 +38,7 @@ jobs:
       if: contains(github.event.inputs.packages, ' cw')
       with:
         workflow_id: all
-        access_token: ${{ github.token }}
+        access_token: ${{ secrets.TOKEN_MGZ0227 }}
     
     - name: Trigger matrix Update
       run: |
@@ -74,6 +74,7 @@ jobs:
       uses: GitRML/delete-workflow-runs@main
       continue-on-error: true
       with:
+        token: ${{ secrets.TOKEN_MGZ0227 }}
         retain_days: 20
         keep_minimum_runs: 1
 
