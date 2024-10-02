@@ -305,18 +305,18 @@ jobs:
         TARGET: "/www/wwwroot/op.miaogongzi.cc/23.05/packages/${{matrix.target}}/miaogongzi/"
     
 
-#    - name: Deploy files to Ubuntuserver
-#      uses: easingthemes/ssh-deploy@main
- #     continue-on-error: true
-  #    if: env.SSH_PRIVATE_KEY && ! contains(github.event.action, 'noser')
-  #    with:
- #       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-   #     ARGS: "-avzr"
-  #      SOURCE: "packages/"
-  #      REMOTE_HOST: ${{ secrets.HOST }}
-#        REMOTE_PORT: ${{ secrets.PORT }}
- #       REMOTE_USER: root
- #       TARGET: "/www/wwwroot/op.miaogongzi.cc/23.05/packages/${{matrix.target}}/miaogongzi/"
+    - name: Deploy files to Ubuntuserver
+      uses: easingthemes/ssh-deploy@main
+      continue-on-error: true
+      if: env.SSH_PRIVATE_KEY && ! contains(github.event.action, 'noser')
+      with:
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        ARGS: "-avzr"
+        SOURCE: "packages/"
+        REMOTE_HOST: ${{ secrets.HOST }}
+        REMOTE_PORT: ${{ secrets.PORT }}
+        REMOTE_USER: root
+        TARGET: "/www/wwwroot/op.miaogongzi.cc/23.05/packages/${{matrix.target}}/miaogongzi/"
         
     - name: Upload packages for artifact
       uses: actions/upload-artifact@main
