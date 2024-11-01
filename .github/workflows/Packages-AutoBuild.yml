@@ -273,7 +273,7 @@ jobs:
       continue-on-error: true
       run: |
         echo -e "墙内加速下载 🚀:\n" >> release.txt
-        echo -e "[阿里云] (https://op.miaogongzi.cc/23.05/packages/${{matrix.target}}/ ☁)\n" >> release.txt
+        echo -e "[阿里云] (https://op.miaogongzi.cc/24.10/packages/${{matrix.target}}/ ☁)\n" >> release.txt
         [ ${{ env.WETRANS }} ] && echo -e "[WeTransfer] (${{ env.WETRANS }} 🗽)\n" >> release.txt
         [ ${{ env.COWURL }} ] && echo -e "[奶牛上传] (${{ env.COWURL }} 🐮)\n" >> release.txt
         [ ${{ env.NOTICE }} ] && echo -e "${{ env.NOTICE }}" >> release.txt || true
@@ -302,7 +302,7 @@ jobs:
         REMOTE_HOST: ${{ secrets.SERVER_HOST }}
         REMOTE_USER: root
         REMOTE_PORT: ${{ secrets.SERVER_PORT }}
-        TARGET: "/www/wwwroot/op.miaogongzi.cc/23.05/packages/${{matrix.target}}/miaogongzi/"
+        TARGET: "/www/wwwroot/op.miaogongzi.cc/24.10/packages/${{matrix.target}}/miaogongzi/"
     
 
     - name: Deploy files to Ubuntuserver
@@ -316,7 +316,7 @@ jobs:
         REMOTE_HOST: ${{ secrets.HOST }}
         REMOTE_PORT: ${{ secrets.PORT }}
         REMOTE_USER: root
-        TARGET: "/www/wwwroot/op.miaogongzi.cc/23.05/packages/${{matrix.target}}/miaogongzi/"
+        TARGET: "/www/wwwroot/op.miaogongzi.cc/24.10/packages/${{matrix.target}}/miaogongzi/"
         
     - name: Upload packages for artifact
       uses: actions/upload-artifact@main
