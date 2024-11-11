@@ -1,7 +1,7 @@
 #!/bin/bash
 
 shopt -s extglob
-rm -rf feeds/miaogongzi/{diy,mt-drivers,shortcut-fe,luci-app-mtwifi,base-files}
+rm -rf feeds/miaogongzi/{diy,mt-drivers,shortcut-fe,luci-app-mtwifi,base-files,dnsmasq,firewall*,wifi-scripts,opkg,ppp,curl,luci-app-opkg,luci-app-firewall}
 
 curl -sfL https://raw.githubusercontent.com/openwrt/packages/master/lang/golang/golang/Makefile -o feeds/packages/lang/golang/golang/Makefile
 
