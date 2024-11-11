@@ -110,13 +110,13 @@ jobs:
     - name: Clone source code
       run: |
         set -v
-        REPO_BRANCH="23.05-SNAPSHOT"
+        REPO_BRANCH="24.10-SNAPSHOT"
         #REPO_BRANCH="$(curl -gs -H 'Content-Type: application/json' \
         #   -H "Authorization: Bearer ${{ secrets.TOKEN_MGZ0227 }}" \
         #   -X POST -d '{ "query": "query {repository(owner: \"openwrt\", name: \"openwrt\") {refs(refPrefix: \"refs/tags/\", last: 4, orderBy: {field: TAG_COMMIT_DATE, direction: ASC}) {edges {node {name}}}}}"}' https://api.github.com/graphql | jq -r '.data.repository.refs.edges[].node.name' | grep v23 | tail -n 1 | sed -e 's/v//')" || true
         echo "$REPO_BRANCH"
         if [[ ${{matrix.target}} == "x86_64" ]]; then
-            curl -fL -o sdk.tar.xz https://downloads.openwrt.org/releases/$REPO_BRANCH/targets/x86/64/openwrt-sdk-$REPO_BRANCH-x86-64_gcc-12.3.0_musl.Linux-x86_64.tar.xz
+            curl -fL -o sdk.tar.zst https://downloads.openwrt.org/releases/$REPO_BRANCH/targets/x86/64/openwrt-sdk-$REPO_BRANCH-x86-64_gcc-13.3.0_musl.Linux-x86_64.tar.zst
         fi
     - name: Free up disk space
       env:
