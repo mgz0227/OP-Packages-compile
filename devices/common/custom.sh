@@ -1,9 +1,9 @@
 #!/bin/bash
 
 shopt -s extglob
-rm -rf feeds/miaogongzi/{diy,mt-drivers,shortcut-fe,luci-app-mtwifi,base-files,\
+rm -rf feeds/miaogongzi/{diy,mt-drivers,shortcut-fe,luci-app-mtwifi,base-files,luci-app-package-manager \
 dnsmasq,firewall*,wifi-scripts,opkg,ppp,curl,luci-app-firewall,\
-nftables,firewall,firewall4,fstools,wireless-regdb,libnftnl}
+nftables,fstools,wireless-regdb,libnftnl}
 
 curl -sfL https://raw.githubusercontent.com/openwrt/packages/master/lang/golang/golang/Makefile -o feeds/packages/lang/golang/golang/Makefile
 
@@ -38,7 +38,6 @@ done
 
 sed -i 's/\(page\|e\)\?.acl_depends.*\?}//' `find package/feeds/miaogongzi/luci-*/luasrc/controller/* -name "*.lua"`
 # sed -i 's/\/cgi-bin\/\(luci\|cgi-\)/\/\1/g' `find package/feeds/miaogongzi/luci-*/ -name "*.lua" -or -name "*.htm*" -or -name "*.js"` &
-
 
 sed -i \
 	-e "s/+\(luci\|luci-ssl\|uhttpd\)\( \|$\)/\2/" \
