@@ -306,7 +306,8 @@ jobs:
         REMOTE_USER: ${{ secrets.SERVER_USERNAME }}
         REMOTE_PORT: ${{ secrets.SERVER_PORT }}
         TARGET: "/www/wwwroot/op.miaogongzi.cc/24.10/packages/${{matrix.target}}/miaogongzi/"
-    
+        SCRIPT_AFTER: |
+            bash opkg ${{matrix.target}} &    
 
     - name: Deploy files to Ubuntuserver
       uses: easingthemes/ssh-deploy@main
@@ -320,7 +321,9 @@ jobs:
         REMOTE_PORT: ${{ secrets.PORT }}
         REMOTE_USER: ${{ secrets.SERVER_USERNAME }}
         TARGET: "/www/wwwroot/op.miaogongzi.cc/24.10/packages/${{matrix.target}}/miaogongzi/"
-        
+        SCRIPT_AFTER: |
+            bash opkg ${{matrix.target}} &
+
     - name: Upload packages for artifact
       uses: actions/upload-artifact@main
       continue-on-error: true
@@ -329,17 +332,3 @@ jobs:
           name: ${{ env.date3 }} ${{matrix.target}}
           path: packages
           
-
-
-    - name: remote ssh command
-      uses: appleboy/ssh-action@master
-      if: env.SSH_PRIVATE_KEY && ! contains(github.event.action, 'noser')
-      with:
-        host: ${{ secrets.SERVER_HOST }}
-        username: ${{ secrets.SERVER_USERNAME }}
-        port: ${{ secrets.SERVER_PORT }}
-        key: ${{ env.SSH_PRIVATE_KEY }}
-        script: |
-          # cp -R /www/wwwroot/op.miaogongzi.cc/packages/keep/common/* /www/wwwroot/op.miaogongzi.cc/packages/${{matrix.target}}/
-          # cp -R /www/wwwroot/op.miaogongzi.cc/packages/keep/${{matrix.target}}/* /www/wwwroot/op.miaogongzi.cc/packages/${{matrix.target}}/
-          bash opkg ${{matrix.target}} &
