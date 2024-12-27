@@ -29,7 +29,6 @@ jobs:
   build:
     if: github.event.repository.owner.id == github.event.sender.id || github.event.sender.id == '119362912'
     runs-on: ubuntu-latest
-    #runs-on: self-hosted
     
     name: Build ${{matrix.target}}
     strategy:
@@ -65,17 +64,17 @@ jobs:
         sed -i "1a REPO_TOKEN=${{ env.REPO_TOKEN }}" ${GITHUB_WORKSPACE}/devices/common/custom.sh
 
     - name: Trigger Packages Update
-      continue-on-error: true
       run: |
-        gitdate="$(curl -H "Authorization: token ${{ env.REPO_TOKEN }}" -s "https://api.github.com/repos/mgz0227/OP-Packages/commits?path=$ipk&per_page=1" | jq -r '.[0].commit.committer.date')" || gitdate="$(curl -H "Authorization: token ${{ secrets.TOKEN_MGZ0227 }}" -s "https://api.github.com/repos/repos/mgz0227/OP-Packages/commits?path=$ipk&per_page=1" | jq -r '.[0].commit.committer.date')" || true
+        gitdate="$(curl -H "Authorization: token ${{ env.REPO_TOKEN }}" -s "https://api.github.com/repos/mgz0227/OP-Packages/commits?path=$ipk&per_page=1" | jq -r '.[0].commit.committer.date')" || gitdate="$(curl -H "Authorization: token ${{ secrets.TOKEN_MGZ0227 }}" -s "https://api.github.com/repos/mgz0227/OP-Packages/commits?path=$ipk&per_page=1" | jq -r '.[0].commit.committer.date')" || true
         gitdate="$(date -d "$gitdate" +%s)" || true
         now="$(date -d "$(date)" +%s)"
         if [[ $(expr $gitdate + 120) < $now ]]; then
-        curl -X POST https://api.github.com/repos/repos/mgz0227/OP-Packages/dispatches \
+        curl -X POST https://api.github.com/repos/mgz0227/OP-Packages/dispatches \
         -H "Accept: application/vnd.github.everest-preview+json" \
         -H "Authorization: token ${{ env.REPO_TOKEN }}" \
         --data '{"event_type": "update"}'
         fi
+
     - name: Free disk space
       uses: jlumbroso/free-disk-space@main
       with:
@@ -115,8 +114,8 @@ jobs:
         #   -H "Authorization: Bearer ${{ secrets.TOKEN_MGZ0227 }}" \
         #   -X POST -d '{ "query": "query {repository(owner: \"openwrt\", name: \"openwrt\") {refs(refPrefix: \"refs/tags/\", last: 4, orderBy: {field: TAG_COMMIT_DATE, direction: ASC}) {edges {node {name}}}}}"}' https://api.github.com/graphql | jq -r '.data.repository.refs.edges[].node.name' | grep v23 | tail -n 1 | sed -e 's/v//')" || true
         echo "$REPO_BRANCH"
-            curl -fL -o sdk.tar.zst https://downloads.openwrt.org/releases/24.10-SNAPSHOT/targets/x86/64/openwrt-sdk-24.10-SNAPSHOT-x86-64_gcc-13.3.0_musl.Linux-x86_64.tar.zst
-            
+            curl -fL -o sdk.tar.zst https://downloads.openwrt.org/releases/$REPO_BRANCH/targets/x86/64/openwrt-sdk-$REPO_BRANCH-x86-64_gcc-13.3.0_musl.Linux-x86_64.tar.zst
+
     - name: Free up disk space
       env:
         DEBIAN_FRONTEND: noninteractive
@@ -131,6 +130,30 @@ jobs:
     
     - name: Load custom configuration
       run: |
+        function git_clone_path() {
+          trap 'rm -rf "$tmpdir"' EXIT
+          branch="$1" rurl="$2" mv="$3"
+          [[ "$mv" != "mv" ]] && shift 2 || shift 3
+          rootdir="$PWD"
+          tmpdir="$(mktemp -d)" || exit 1
+          if [ ${#branch} -lt 10 ]; then
+          git clone -b "$branch" --depth 1 --filter=blob:none --sparse "$rurl" "$tmpdir"
+          cd "$tmpdir"
+          else
+          git clone --filter=blob:none --sparse "$rurl" "$tmpdir"
+          cd "$tmpdir"
+          git checkout $branch
+          fi
+          if [ "$?" != 0 ]; then
+            echo "error on $rurl"
+            exit 1
+          fi
+          git sparse-checkout init --cone
+          git sparse-checkout set $@
+          [[ "$mv" != "mv" ]] && cp -rn ./* $rootdir/ || mv -n $@/* $rootdir/$@/
+          cd $rootdir
+          }
+        export -f git_clone_path
         tar -xJf sdk.tar.zst -C openwrt || tar -xf sdk.tar.zst -C openwrt
         rm -Rf sdk.tar.zst
         cd openwrt
@@ -181,12 +204,12 @@ jobs:
         mkdir package/feeds/miaogongzi
         cp -rf miaogongzi.b/{wxbase,lib*,rapidjson,nftables,jpcre2,toml11,gn,curl,quickjspp,qt*,libtorrent*,openssl,mbedtls,ppp,cups,nftables} package/feeds/miaogongzi/ || true
 
-    
     - name: Compile the firmware
       run: |
         cd openwrt
           echo -e "$(($(nproc)+1)) thread compile"
           fpkg="$(echo "${{github.event.action}}" | sed -e 's/\(aarch64_generic\|x86_64\|i386_pentium4\|arm_arm1176jzf-s_vfp\|aarch64_cortex-a72\|aarch64_cortex-a76\|arm_cortex-a7\|arm_cortex-a7_neon-vfpv4\|arm_cortex-a9\|arm_cortex-a15_neon-vfpv4\|arm_cortex-a5_vfpv4\|mipsel_24kc\|mips_24kc\|aarch64_cortex-a53\|arm_xscale\|arm_cortex-a9_vfpv3-d16\| [0-9][0-9.]*\| ssh\| noser\| cw\)//g' | sed -e 's/ //g')"
+          echo "FPKG=$fpkg" >> $GITHUB_ENV
           during="$(echo "${{github.event.action}}" | grep -o -E ' [0-9][0-9.]*' | sed -e 's/ //')"
           function comp(){
              echo "compile $ipk"
