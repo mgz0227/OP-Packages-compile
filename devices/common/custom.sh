@@ -1,7 +1,7 @@
 #!/bin/bash
 
 shopt -s extglob
-rm -rf feeds/miaogongzi/{diy,mt-drivers,shortcut-fe,luci-app-mtwifi,base-files,luci-app-package-manager \
+rm -rf feeds/miaogongzi/{diy,mt-drivers,shortcut-fe,luci-app-mtwifi,base-files,luci-app-package-manager,\
 dnsmasq,firewall*,wifi-scripts,opkg,ppp,curl,luci-app-firewall,\
 nftables,fstools,wireless-regdb,libnftnl}
 
@@ -35,6 +35,8 @@ done
 ./scripts/feeds update -a
 ./scripts/feeds install -a -p miaogongzi -f
 ./scripts/feeds install -a
+
+rm -rf package/feeds/miaogongzi/luci-app-quickstart/root/usr/share/luci/menu.d/luci-app-quickstart.json
 
 sed -i 's/\(page\|e\)\?.acl_depends.*\?}//' `find package/feeds/miaogongzi/luci-*/luasrc/controller/* -name "*.lua"`
 # sed -i 's/\/cgi-bin\/\(luci\|cgi-\)/\/\1/g' `find package/feeds/miaogongzi/luci-*/ -name "*.lua" -or -name "*.htm*" -or -name "*.js"` &
