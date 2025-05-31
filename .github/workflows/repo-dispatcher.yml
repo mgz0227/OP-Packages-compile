@@ -30,7 +30,7 @@ env:
 jobs:
   build:
     if: github.event.repository.owner.id == github.event.sender.id || ! github.event.sender.id
-    runs-on: Ubuntu-latest
+    runs-on: ubuntu-latest
     #runs-on: self-hosted
     steps:
     - name: cancel running workflows
@@ -70,21 +70,15 @@ jobs:
           -H "Accept: application/vnd.github.everest-preview+json" \
           -H "Authorization: token ${{ env.REPO_TOKEN }}" \
           -d '{"event_type": "x86_64 ${{ github.event.inputs.packages }}", "client_payload": {"target": "x86_64"}}'
-    - name: Delete workflow runs
-      uses: GitRML/delete-workflow-runs@main
-      continue-on-error: true
-      with:
-        token: ${{ secrets.TOKEN_MGZ0227 }}
-        retain_days: 20
-        keep_minimum_runs: 1
+
 
     - name: Remove old Releases
-      uses: dev-drprasad/delete-older-releases@master
+      uses: ophub/delete-releases-workflows@main
       continue-on-error: true
-      if: env.UPLOAD_FIRMWARE_FOR_RELEASE == 'true' && !cancelled()
       with:
-        keep_latest: 100
+        delete_releases: true
+        releases_keep_latest: 50
         delete_tags: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.TOKEN_MGZ0227 }}
-       
+        delete_workflows: true
+        workflows_keep_day: 10
+        gh_token: ${{ secrets.TOKEN_MGZ0227 }}
