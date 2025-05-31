@@ -64,20 +64,8 @@ jobs:
         fi
         sed -i "1a REPO_TOKEN=${{ env.REPO_TOKEN }}" ${GITHUB_WORKSPACE}/devices/common/custom.sh
 
-    - name: Trigger Packages Update
-      run: |
-        gitdate="$(curl -H "Authorization: token ${{ env.REPO_TOKEN }}" -s "https://api.github.com/repos/mgz0227/OP-Packages/commits?path=$ipk&per_page=1" | jq -r '.[0].commit.committer.date')" || gitdate="$(curl -H "Authorization: token ${{ secrets.TOKEN_MGZ0227 }}" -s "https://api.github.com/repos/mgz0227/OP-Packages/commits?path=$ipk&per_page=1" | jq -r '.[0].commit.committer.date')" || true
-        gitdate="$(date -d "$gitdate" +%s)" || true
-        now="$(date -d "$(date)" +%s)"
-        if [[ $(expr $gitdate + 120) < $now ]]; then
-        curl -X POST https://api.github.com/repos/mgz0227/OP-Packages/dispatches \
-        -H "Accept: application/vnd.github.everest-preview+json" \
-        -H "Authorization: token ${{ env.REPO_TOKEN }}" \
-        --data '{"event_type": "update"}'
-        fi
-
     - name: Free disk space
-      uses: jlumbroso/free-disk-space@main
+      uses: coder-xiaomo/free-disk-space@main
       with:
         tool-cache: false
         android: true
@@ -95,7 +83,7 @@ jobs:
         sudo -E apt-get -qq install build-essential libncurses-dev zlib1g-dev gawk git \
         gettext libssl-dev xsltproc rsync wget unzip \
         llvm python3-pyelftools libpython3-dev aria2 jq qemu-utils rename \
-        libelf-dev libgmp3-dev libmpc-dev libfuse-dev bc
+        libelf-dev libgmp3-dev libmpc-dev libfuse-dev bc autopoint cups-ppdc
         sudo -E apt-get -qq autoremove --purge
         sudo -E apt-get -qq clean
         sudo timedatectl set-timezone "Asia/Shanghai"
@@ -116,6 +104,7 @@ jobs:
         #   -X POST -d '{ "query": "query {repository(owner: \"openwrt\", name: \"openwrt\") {refs(refPrefix: \"refs/tags/\", last: 4, orderBy: {field: TAG_COMMIT_DATE, direction: ASC}) {edges {node {name}}}}}"}' https://api.github.com/graphql | jq -r '.data.repository.refs.edges[].node.name' | grep v23 | tail -n 1 | sed -e 's/v//')" || true
         echo "$REPO_BRANCH"
             curl -fL -o sdk.tar.zst https://downloads.openwrt.org/releases/$REPO_BRANCH/targets/x86/64/openwrt-sdk-$REPO_BRANCH-x86-64_gcc-13.3.0_musl.Linux-x86_64.tar.zst
+
 
     - name: Free up disk space
       env:
@@ -203,7 +192,7 @@ jobs:
         mv -f feeds/packages/lang feeds/packages/lang.b
         mv -f feeds/packages feeds/packages.b
         mkdir package/feeds/miaogongzi
-        cp -rf miaogongzi.b/{wxbase,lib*,rapidjson,nftables,jpcre2,toml11,gn,curl,quickjspp,qt*,libtorrent*,openssl,mbedtls,ppp,cups,nftables} package/feeds/miaogongzi/ || true
+        cp -rf miaogongzi.b/{wxbase,lib*,rapidjson,nftables,jpcre2,toml11,gn,curl,quickjspp,qt*,libdouble*,libtorrent*,openssl,mbedtls,ppp,cups,nftables} package/feeds/miaogongzi/ || true
 
     - name: Compile the firmware
       run: |
@@ -234,7 +223,16 @@ jobs:
               comp
             else
               REPO_TOKEN="${{ env.REPO_TOKEN }}"
-              gitdate=$(curl -H "Authorization: token $REPO_TOKEN" -s "https://api.github.com/repos/mgz0227/OP-Packages/commits?path=$ipk&per_page=1" | jq -r '.[0].commit.committer.date') || (REPO_TOKEN="${{ secrets.TOKEN_MGZ0227 }}" && gitdate=$(curl -H "Authorization: token $REPO_TOKEN" -s "https://api.github.com/repos/mgz0227/OP-Packages/commits?path=$ipk&per_page=1" | jq -r '.[0].commit.committer.date')) || (REPO_TOKEN="${{ secrets.TOKEN_MGZ0227 }}" && gitdate=$(curl -H "Authorization: token $REPO_TOKEN" -s "https://api.github.com/repos/mgz0227/OP-Packages/commits?path=$ipk&per_page=1" | jq -r '.[0].commit.committer.date'))
+              for token in "$REPO_TOKEN" "${{ secrets.TOKEN_MGZ0227 }}" "${{ secrets.TOKEN_MGZ0227 }}"; do
+                if [ -n "$token" ] && gitdate=$(curl -H "Authorization: token $token" -s "https://api.github.com/repos/mgz0227/OP-Packages/commits?path=$ipk&per_page=1" | jq -r '.[0].commit.committer.date') && [ "$gitdate" != "null" ]; then
+                  success=true
+                  break
+                fi
+              done
+              if [ "$success" != true ]; then
+                  echo "Failed to get commit date with any token"
+                  exit 1
+              fi
               if [[ "$gitdate" && "$gitdate" != null ]]; then
                 gitdate="$(date -d "$gitdate" +%s)"
                 now="$(date -d "$(date)" +%s)"
@@ -265,6 +263,7 @@ jobs:
         mv -f openwrt/bin/packages/*/miaogongzi/* packages || true
         mv -f openwrt/.config packages/${{matrix.target}}.config || true
         # cp -Rf openwrt/bin/packages/*/packages/python3* packages/
+        # cp -Rf openwrt/bin/packages/*/luci/luci-base* packages/ || true
         echo "FIRMWARE=$PWD/packages" >> $GITHUB_ENV
         Emoji=("🎉" "🤞" "✨" "🎁" "🎈" "🎄" "🎨" "💋" "🍓" "🍕" "🍉" "💐" "🌴" "🚀" "🛸" "🗽" "⛅" "🌈" "🔥" "⛄" "🐶" "🏅" "🦄" "🐤")
         echo "EMOJI=${Emoji[$[$RANDOM % ${#Emoji[@]}]]}" >> $GITHUB_ENV
@@ -318,7 +317,7 @@ jobs:
         name: ${{ env.NAME }}
         tag_name: ${{ env.date }}_${{matrix.target}}
         body_path: release.txt
-        
+
     - name: deploy files to server
       uses: easingthemes/ssh-deploy@main
       if: env.SSH_PRIVATE_KEY && ! contains(github.event.action, 'noser')
