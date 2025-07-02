@@ -318,19 +318,6 @@ jobs:
         tag_name: ${{ env.date }}_${{matrix.target}}
         body_path: release.txt
 
-    - name: deploy files to server
-      uses: easingthemes/ssh-deploy@main
-      if: env.SSH_PRIVATE_KEY && ! contains(github.event.action, 'noser')
-      with:
-        SSH_PRIVATE_KEY: ${{ env.SSH_PRIVATE_KEY }}
-        ARGS: "-avzr"
-        SOURCE: "packages/"
-        REMOTE_HOST: ${{ secrets.SERVER_HOST }}
-        REMOTE_USER: ${{ secrets.SERVER_USERNAME }}
-        REMOTE_PORT: ${{ secrets.SERVER_PORT }}
-        TARGET: "/www/wwwroot/op.miaogongzi.cc/24.10/packages/${{matrix.target}}/miaogongzi/"
-        SCRIPT_AFTER: |
-            bash opkg ${{matrix.target}} &    
 
     - name: Deploy files to Ubuntuserver
       uses: easingthemes/ssh-deploy@main
@@ -346,6 +333,21 @@ jobs:
         TARGET: "/www/wwwroot/op.miaogongzi.cc/24.10/packages/${{matrix.target}}/miaogongzi/"
         SCRIPT_AFTER: |
             bash opkg ${{matrix.target}} &
+            
+    - name: deploy files to server
+      uses: easingthemes/ssh-deploy@main
+      if: env.SSH_PRIVATE_KEY && ! contains(github.event.action, 'noser')
+      with:
+        SSH_PRIVATE_KEY: ${{ env.SSH_PRIVATE_KEY }}
+        ARGS: "-avzr"
+        SOURCE: "packages/"
+        REMOTE_HOST: ${{ secrets.SERVER_HOST }}
+        REMOTE_USER: ${{ secrets.SERVER_USERNAME }}
+        REMOTE_PORT: ${{ secrets.SERVER_PORT }}
+        TARGET: "/www/wwwroot/op.miaogongzi.cc/24.10/packages/${{matrix.target}}/miaogongzi/"
+        SCRIPT_AFTER: |
+            bash opkg ${{matrix.target}} &    
+
 
     - name: Upload packages for artifact
       uses: actions/upload-artifact@main
