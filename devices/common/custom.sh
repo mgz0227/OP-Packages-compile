@@ -58,3 +58,5 @@ sed -i '/WARNING: Makefile/d' scripts/package-metadata.pl
 
 cp -f devices/common/po2lmo staging_dir/host/bin/po2lmo
 chmod +x staging_dir/host/bin/po2lmo
+
+./scripts/feeds list -a | grep ipsec
