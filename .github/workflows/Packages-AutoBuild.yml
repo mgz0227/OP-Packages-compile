@@ -180,7 +180,6 @@ jobs:
           status=$(curl -H "Authorization: token ${{ env.REPO_TOKEN }}" -s "https://api.github.com/repos/mgz0227/OP-Packages/actions/runs" | jq -r '.workflow_runs[0].status')
         done
         make defconfig
-        ls /feeds/miaogongzi | grep ipsec
 
 
     - name: SSH connection to Actions
