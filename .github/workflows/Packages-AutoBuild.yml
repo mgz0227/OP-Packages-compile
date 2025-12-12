@@ -331,7 +331,7 @@ jobs:
         REMOTE_HOST: ${{ secrets.HOST }}
         REMOTE_PORT: ${{ secrets.PORT }}
         REMOTE_USER: ${{ secrets.SERVER_USERNAME }}
-        TARGET: "/www/wwwroot/op.miaogongzi.cc/24.10/packages/${{matrix.target}}/miaogongzi/"
+        TARGET: "/www/wwwroot/op.miaogongzi.cc/25.12/packages/${{matrix.target}}/miaogongzi/"
         SCRIPT_AFTER: |
             bash opkg ${{matrix.target}} &
             
