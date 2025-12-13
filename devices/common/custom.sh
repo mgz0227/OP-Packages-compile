@@ -1,6 +1,12 @@
 #!/bin/bash
 
 shopt -s extglob
+
+sed -i '$a src-git miaogongzi https://github.com/mgz0227/OP-Packages.git;master' feeds.conf.default
+sed -i "/telephony/d" feeds.conf.default
+sed -i -E "s#git\.openwrt\.org/(openwrt|feed|project)#github.com/openwrt#" feeds.conf.default
+
+
 rm -rf feeds/miaogongzi/{diy,mt-drivers,shortcut-fe,luci-app-mtwifi,base-files,luci-app-package-manager,\
 dnsmasq,firewall*,wifi-scripts,opkg,ppp,curl,luci-app-firewall,\
 nftables,fstools,wireless-regdb,libnftnl,netdata}
