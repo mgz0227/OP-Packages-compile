@@ -1,6 +1,6 @@
 --- a/Config.in
 +++ b/Config.in
-@@ -18,6 +18,16 @@ menu "Global build settings"
+@@ -18,6 +18,15 @@ menu "Global build settings"
  		bool "Cryptographically sign package lists"
  		default y
  
@@ -12,7 +12,6 @@
 +		imply PACKAGE_apk-mbedtls
 +		bool "Use APK instead of OPKG to build distribution"
 +		default n
-+ endmenu
 +
  endmenu
  
