@@ -9,15 +9,14 @@
 name: Packages-AutoBuild
 
 on: 
-  repository_dispatch:
-  # push: 
-  #   branches:
-  #     - master
-  # schedule:
-  #   - cron: 0 1 */1 * *
+  workflow_dispatch:
+    inputs:
+      packages:
+        description: 'Packages'
+        required: false
+        default: ''
 
 env:
-  REPO_TOKEN: ${{ secrets.TOKEN_MGZ0227 }}
   PPPOE_USERNAME: ${{ secrets.PPPOE_USERNAME }}
   PPPOE_PASSWD: ${{ secrets.PPPOE_PASSWD }}
   SCKEY: ${{ secrets.SCKEY }}
@@ -35,7 +34,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: ["${{ github.event.client_payload.target }}"]
+        target: ["x86_64"]
         
     steps:
     - name: Checkout
@@ -45,7 +44,7 @@ jobs:
 
     - name: Load Settings.ini
       run: |
-        source "${GITHUB_WORKSPACE}/devices/common/settings.ini"
+        source "${{ github.workspace }}/devices/common/settings.ini"
         echo "REPO_URL=${REPO_URL}" >> $GITHUB_ENV
         echo "REPO_BRANCH=${REPO_BRANCH}" >> $GITHUB_ENV
         echo "CONFIG_FILE=${CONFIG_FILE}" >> $GITHUB_ENV
@@ -62,7 +61,7 @@ jobs:
         else
           echo "REPO_TOKEN=${{ secrets.TOKEN_MGZ0227 }}" >> $GITHUB_ENV
         fi
-        sed -i "1a REPO_TOKEN=${{ env.REPO_TOKEN }}" ${GITHUB_WORKSPACE}/devices/common/custom.sh
+        sed -i "1a REPO_TOKEN=${{ env.REPO_TOKEN }}" ${{ github.workspace }}/devices/common/custom2.sh
 
     - name: Free disk space
       uses: coder-xiaomo/free-disk-space@main
@@ -98,21 +97,19 @@ jobs:
     - name: Clone source code
       run: |
         set -v
-        REPO_BRANCH="24.10-SNAPSHOT"
+        REPO_BRANCH="25.12-SNAPSHOT"
         #REPO_BRANCH="$(curl -gs -H 'Content-Type: application/json' \
         #   -H "Authorization: Bearer ${{ secrets.TOKEN_MGZ0227 }}" \
         #   -X POST -d '{ "query": "query {repository(owner: \"openwrt\", name: \"openwrt\") {refs(refPrefix: \"refs/tags/\", last: 4, orderBy: {field: TAG_COMMIT_DATE, direction: ASC}) {edges {node {name}}}}}"}' https://api.github.com/graphql | jq -r '.data.repository.refs.edges[].node.name' | grep v23 | tail -n 1 | sed -e 's/v//')" || true
         echo "$REPO_BRANCH"
-            curl -fL -o sdk.tar.zst https://downloads.openwrt.org/releases/$REPO_BRANCH/targets/x86/64/openwrt-sdk-$REPO_BRANCH-x86-64_gcc-13.3.0_musl.Linux-x86_64.tar.zst
-
+            curl -fL -o sdk.tar.zst https://downloads.openwrt.org/releases/$REPO_BRANCH/targets/x86/64/openwrt-sdk-$REPO_BRANCH-x86-64_gcc-14.3.0_musl.Linux-x86_64.tar.zst
 
     - name: Free up disk space
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
         sudo mkdir -p -m 777 openwrt /mnt/openwrt/staging_dir /mnt/openwrt/build_dir /mnt/openwrt/bin  /mnt/openwrt/dl
-        ln -sf /mnt/openwrt/staging_dir openwrt/staging_dir
-        [[ "$(echo "${{github.event.action}}" | grep "a-")" ]] &&
+          ln -sf /mnt/openwrt/staging_dir openwrt/staging_dir
           ln -sf /mnt/openwrt/build_dir openwrt/build_dir
         df -hT
     
@@ -155,221 +152,43 @@ jobs:
         sed -i '/	refresh_config();/d' scripts/feeds
         ./scripts/feeds update -a
         find "devices/common/patches" -type f -name '*.b.patch' -print0 | sort -z | xargs -I % -t -0 -n 1 sh -c "cat '%'  | patch -d './' -p1 -E --forward --no-backup-if-mismatch"
-        /bin/bash "devices/common/custom.sh"
-        if [ -f "devices/${{matrix.target}}/custom.sh" ]; then
-          /bin/bash "devices/${{matrix.target}}/custom.sh"
+        /bin/bash "devices/common/custom2.sh"
+        if [ -f "devices/${{matrix.target}}/custom2.sh" ]; then
+          /bin/bash "devices/${{matrix.target}}/custom2.sh"
         fi
         find "devices/common/patches" -type f -name '*.patch' ! -name '*.b.patch' -print0 | sort -z | xargs -I % -t -0 -n 1 sh -c "cat '%'  | patch -d './' -p1 -E --forward --no-backup-if-mismatch"
         if [ -n "$(ls -A "devices/${{matrix.target}}/patches" 2>/dev/null)" ]; then
           find "devices/${{matrix.target}}/patches" -type f -name '*.patch' -print0 | sort -z | xargs -I % -t -0 -n 1 sh -c "cat '%'  | patch -d './' -p1 -E --forward --no-backup-if-mismatch"
         fi
         cp -Rf ./diy/* ./ || true
-        if [ -f "devices/${{matrix.target}}/default-settings" ]; then
-          echo >> package/*/*/my-default-settings/files/etc/uci-defaults/99-default-settings
-          cat devices/${{matrix.target}}/default-settings >> package/*/*/my-default-settings/files/etc/uci-defaults/99-default-settings
-        fi
         if [ -f "devices/${{matrix.target}}/.config" ]; then
           echo >> .config
           cat devices/${{matrix.target}}/.config >> .config
         fi
-        status=$(curl -H "Authorization: token ${{ env.REPO_TOKEN }}" -s "https://api.github.com/repos/mgz0227/OP-Packages/actions/runs" | jq -r '.workflow_runs[0].status')
-        while [ "$status" == "in_progress" ];do
-          sleep 5
-          status=$(curl -H "Authorization: token ${{ env.REPO_TOKEN }}" -s "https://api.github.com/repos/mgz0227/OP-Packages/actions/runs" | jq -r '.workflow_runs[0].status')
-        done
         make defconfig
-
 
     - name: SSH connection to Actions
       uses: kiddin9/debugger-action@master
       if: contains(github.event.action, 'ssh')
 
-    - name: Prepare
-      run: |
-        cd openwrt
-        mv -f package/feeds/miaogongzi miaogongzi.b
-        mv -f feeds/packages/lang feeds/packages/lang.b
-        mv -f feeds/packages feeds/packages.b
-        mkdir package/feeds/miaogongzi
-        cp -rf miaogongzi.b/{wxbase,lib*,rapidjson,nftables,jpcre2,toml11,gn,curl,quickjspp,qt*,libdouble*,libtorrent*,openssl,mbedtls,ppp,cups,nftables} package/feeds/miaogongzi/ || true
-
     - name: Compile the firmware
       run: |
         cd openwrt
           echo -e "$(($(nproc)+1)) thread compile"
-          fpkg="$(echo "${{github.event.action}}" | sed -e 's/\(aarch64_generic\|x86_64\|i386_pentium4\|arm_arm1176jzf-s_vfp\|aarch64_cortex-a72\|aarch64_cortex-a76\|arm_cortex-a7\|arm_cortex-a7_neon-vfpv4\|arm_cortex-a9\|arm_cortex-a15_neon-vfpv4\|arm_cortex-a5_vfpv4\|mipsel_24kc\|mips_24kc\|aarch64_cortex-a53\|arm_xscale\|arm_cortex-a9_vfpv3-d16\| [0-9][0-9.]*\| ssh\| noser\| cw\)//g' | sed -e 's/ //g')"
-          echo "FPKG=$fpkg" >> $GITHUB_ENV
-          during="$(echo "${{github.event.action}}" | grep -o -E ' [0-9][0-9.]*' | sed -e 's/ //')"
-          function comp(){
-             echo "compile $ipk"
-             cp -rf miaogongzi.b/$ipk package/feeds/miaogongzi/
-             if [[ $ipk != luci-* ]]; then
-              mv -f feeds/packages.b feeds/packages
-              mv feeds/packages/lang.b feeds/packages/lang
-              [ "$(grep "PKG_BUILD_DEPENDS" package/feeds/miaogongzi/$ipk/Makefile)" ] || mv feeds/packages/lang/node feeds/packages/lang/node.b
-             fi
-             (make -k package/$ipk/compile -j$(($(nproc)+1)) || make package/$ipk/compile V=s 2>&1 | tee error_$ipk.log | grep -i "Error 2" || rm -rf error_$ipk.log) || true
-             if [[ $ipk != luci-* ]]; then
-              mv -f feeds/packages/lang feeds/packages/lang.b 2>/dev/null || true
-              mv -f feeds/packages/lang.b/node.b feeds/packages/lang.b/node 2>/dev/null || true
-              mv -f feeds/packages feeds/packages.b
-              rm -rf package/feeds/miaogongzi/$ipk
-             fi
-            }
-          for ipk in $(ls miaogongzi.b | grep -E "$fpkg"); do
-            echo $ipk
-            if [[ "$fpkg" && ! "$during" ]]; then
-              comp
-            else
-              REPO_TOKEN="${{ env.REPO_TOKEN }}"
-              for token in "$REPO_TOKEN" "${{ secrets.TOKEN_MGZ0227 }}" "${{ secrets.TOKEN_MGZ0227 }}"; do
-                if [ -n "$token" ] && gitdate=$(curl -H "Authorization: token $token" -s "https://api.github.com/repos/mgz0227/OP-Packages/commits?path=$ipk&per_page=1" | jq -r '.[0].commit.committer.date') && [ "$gitdate" != "null" ]; then
-                  success=true
-                  break
-                fi
-              done
-              if [ "$success" != true ]; then
-                  echo "Failed to get commit date with any token"
-                  exit 1
-              fi
-              if [[ "$gitdate" && "$gitdate" != null ]]; then
-                gitdate="$(date -d "$gitdate" +%s)"
-                now="$(date -d "$(date)" +%s)"
-                [ "$during" ] || during="1.05"
-                durings=`echo "$during*60*60*24" | bc`
-                if [[ $(($gitdate + ${durings%.*})) -gt $now && $ipk != luci-base ]]; then
-                  echo "$((($now - $gitdate)/60/60))" || true
-                  echo "$ipk" >> ipk.txt
-                fi
-              fi
-            fi
-          done
-          if [ -f ipk.txt ]; then
-              for ipk in $(cat ipk.txt)
-              do
-                comp
-              done
-          fi
+          make -j$(($(nproc)+1))
         echo "status=success" >> $GITHUB_ENV
 
     - name: Check space usage
       run: df -hT
 
-    - name: Organize files
-      id: organize
-      run: |
-        mkdir packages
-        mv -f openwrt/bin/packages/*/miaogongzi/* packages || true
-        mv -f openwrt/.config packages/${{matrix.target}}.config || true
-        # cp -Rf openwrt/bin/packages/*/packages/python3* packages/
-        # cp -Rf openwrt/bin/packages/*/luci/luci-base* packages/ || true
-        echo "FIRMWARE=$PWD/packages" >> $GITHUB_ENV
-        Emoji=("🎉" "🤞" "✨" "🎁" "🎈" "🎄" "🎨" "💋" "🍓" "🍕" "🍉" "💐" "🌴" "🚀" "🛸" "🗽" "⛅" "🌈" "🔥" "⛄" "🐶" "🏅" "🦄" "🐤")
-        echo "EMOJI=${Emoji[$[$RANDOM % ${#Emoji[@]}]]}" >> $GITHUB_ENV
-        if [[ $(ls -l openwrt/error* | grep "^-" | wc -l) -le 0 ]]; then
-           echo "NAME=${Emoji[$[$RANDOM % ${#Emoji[@]}]]} ${{ env.date2 }} ${{matrix.target}} ${{ env.EMOJI }}" >> $GITHUB_ENV
-        else
-           echo "NAME=❌ ${{ env.date2 }} ${{matrix.target}} ❌" >> $GITHUB_ENV
-        fi
-
-    - name: Upload firmware to cowtransfer
-      if: env.UPLOAD_FIRMWARE_TO_COWTRANSFER == 'true'
-      continue-on-error: true
-      run: |
-        curl -fsSL git.io/file-transfer | sh
-        cowurl=$(./transfer cow --block 2621440 -s --no-progress ${FIRMWARE})
-        cowurl=$(echo $cowurl | grep -o -E "https[^ ]*")
-        echo "COWURL=$cowurl" >> $GITHUB_ENV
-        echo "Download Link: ${{ env.EMOJI }} $cowurl ${{ env.EMOJI }} 🚀"
- 
-    - name: Upload firmware to WeTransfer
-      if: env.UPLOAD_FIRMWARE_TO_WETRANSFER == 'true'
-      continue-on-error: true
-      run: |
-        curl -fsSL git.io/file-transfer | sh
-        wetrans=$(./transfer wet -s -p 16 --no-progress ${FIRMWARE})
-        wetrans=$(echo $wetrans | grep -o -E "https[^ ]*")
-        echo "WETRANS=$wetrans" >> $GITHUB_ENV
-        echo "Download Link: ${{ env.EMOJI }} $wetrans ${{ env.EMOJI }} 🚀"
-        
-    - name: Create release
-      id: create_release
-      if: env.REPO_TOKEN && env.UPLOAD_FIRMWARE_FOR_RELEASE == 'true'
-      continue-on-error: true
-      run: |
-        echo -e "墙内加速下载 🚀:\n" >> release.txt
-        echo -e "[阿里云] (https://op.miaogongzi.cc/23.05/packages/${{matrix.target}}/ ☁)\n" >> release.txt
-        [ ${{ env.WETRANS }} ] && echo -e "[WeTransfer] (${{ env.WETRANS }} 🗽)\n" >> release.txt
-        [ ${{ env.COWURL }} ] && echo -e "[奶牛上传] (${{ env.COWURL }} 🐮)\n" >> release.txt
-        [ ${{ env.NOTICE }} ] && echo -e "${{ env.NOTICE }}" >> release.txt || true
-
-    - name: Upload packages for release
-      uses: softprops/action-gh-release@v2.2.2
-      continue-on-error: true
-      if: env.REPO_TOKEN && env.UPLOAD_FIRMWARE_FOR_RELEASE == 'true'
-      env:
-        GITHUB_TOKEN: ${{ secrets.TOKEN_MGZ0227 }}
-      with:
-        files: |
-            packages/*
-            openwrt/error*.log
-        name: ${{ env.NAME }}
-        tag_name: ${{ env.date }}_${{matrix.target}}
-        body_path: release.txt
-
-
-    - name: Deploy files to Ubuntuserver
-      uses: easingthemes/ssh-deploy@main
-      continue-on-error: true
-      if: env.SSH_PRIVATE_KEY && ! contains(github.event.action, 'noser')
-      with:
-        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        ARGS: "-avzr"
-        SOURCE: "packages/"
-        REMOTE_HOST: ${{ secrets.HOST }}
-        REMOTE_PORT: ${{ secrets.PORT }}
-        REMOTE_USER: ${{ secrets.SERVER_USERNAME }}
-        TARGET: "/www/wwwroot/op.miaogongzi.cc/25.12/packages/${{matrix.target}}/miaogongzi/"
-        SCRIPT_AFTER: |
-            bash opkg ${{matrix.target}} &
-            
     - name: deploy files to server
       uses: easingthemes/ssh-deploy@main
       if: env.SSH_PRIVATE_KEY && ! contains(github.event.action, 'noser')
       with:
         SSH_PRIVATE_KEY: ${{ env.SSH_PRIVATE_KEY }}
         ARGS: "-avzr"
-        SOURCE: "packages/"
-        REMOTE_HOST: ${{ secrets.SERVER_HOST }}
+        SOURCE: "openwrt/bin/packages/"
+        REMOTE_HOST: ${{ secrets.HOST }}
+        REMOTE_PORT: ${{ secrets.PORT }}
         REMOTE_USER: ${{ secrets.SERVER_USERNAME }}
-        REMOTE_PORT: ${{ secrets.SERVER_PORT }}
-        TARGET: "/www/wwwroot/op.miaogongzi.cc/24.10/packages/${{matrix.target}}/miaogongzi/"
-        SCRIPT_AFTER: |
-            bash opkg ${{matrix.target}} &    
-
-
-    - name: Upload packages for artifact
-      uses: actions/upload-artifact@main
-      continue-on-error: true
-      if: env.UPLOAD_FIRMWARE_FOR_ARTIFACT == 'true'
-      with:
-          name: ${{ env.date3 }} ${{matrix.target}}
-          path: packages
-          
-    - name: Delete workflow runs
-      uses: mgz0227/delete-workflow-runs@main
-      continue-on-error: true
-      with:
-        token: ${{ secrets.TOKEN_MGZ0227 }}
-        retain_days: 100
-        keep_minimum_runs: 0
-
-    - name: Remove old Releases
-      uses: dev-drprasad/delete-older-releases@master
-      continue-on-error: true
-      if: env.UPLOAD_FIRMWARE_FOR_RELEASE == 'true' && !cancelled()
-      with:
-        keep_latest: 15
-        delete_tags: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.TOKEN_MGZ0227 }}
+        TARGET: "/www/wwwroot/op.miaogongzi.cc/releases/25.12/"
