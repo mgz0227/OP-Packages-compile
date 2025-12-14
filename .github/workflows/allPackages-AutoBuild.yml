@@ -175,7 +175,7 @@ jobs:
       run: |
         cd openwrt
           echo -e "$(($(nproc)+1)) thread compile"
-          make -j$(($(nproc)+1))
+          make -j$(($(nproc)+1)) || make V=s 2>&1 | tee error.log | grep -i "Error 2"
         echo "status=success" >> $GITHUB_ENV
 
     - name: Check space usage
@@ -191,4 +191,4 @@ jobs:
         REMOTE_HOST: ${{ secrets.HOST }}
         REMOTE_PORT: ${{ secrets.PORT }}
         REMOTE_USER: ${{ secrets.SERVER_USERNAME }}
-        TARGET: "/www/wwwroot/op.miaogongzi.cc/releases/25.12/"
+        TARGET: "/www/wwwroot/op.miaogongzi.cc/25.12/"
