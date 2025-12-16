@@ -175,7 +175,7 @@ jobs:
       run: |
         cd openwrt
           echo -e "$(($(nproc)+1)) thread compile"
-          make -j5 -k || log=$(mktemp); make V=s > "$log" 2>&1; grep -q "Error 2" "$log" && tail -n 20 "$log"; rm "$log"
+          make -j3 -k || log=$(mktemp); make V=s > "$log" 2>&1; grep -q "Error 2" "$log" && tail -n 20 "$log"; rm "$log"
         echo "status=success" >> $GITHUB_ENV
 
     - name: Check space usage
