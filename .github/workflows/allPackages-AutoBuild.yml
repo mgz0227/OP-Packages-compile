@@ -28,7 +28,8 @@ env:
 jobs:
   build:
     if: github.event.repository.owner.id == github.event.sender.id || github.event.sender.id == '119362912'
-    runs-on: ubuntu-latest
+    #runs-on: ubuntu-latest
+    runs-on: self-hosted
     
     name: Build ${{matrix.target}}
     strategy:
