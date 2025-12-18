@@ -3,14 +3,13 @@
 shopt -s extglob
 
 sed -i "/telephony/d" feeds.conf.default
-sed -i "/video/d" feeds.conf.default
+sed -i "/packages/d" feeds.conf.default
 sed -i -E "s#git\.openwrt\.org/(openwrt|feed|project)#github.com/openwrt#" feeds.conf.default
 
 ./scripts/feeds update -a
 ./scripts/feeds install -a
 
-
-rm -rf package/feeds/packages/{netdata,cloudreve,smartdns,vsftpd,p910nd,aria2,ariang,coremark,watchcat,dockerd,tessdata,telegraf,oci-runtime-tools,micropython,frp}
+rm -rf package/feeds/packages/{netdata,cloudreve,smartdns,vsftpd,p910nd,aria2,ariang,coremark,watchcat,dockerd,frp}
 
 cp -f devices/common/.config .config
 
