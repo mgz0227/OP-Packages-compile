@@ -29,7 +29,6 @@ jobs:
   build:
     if: github.event.repository.owner.id == github.event.sender.id || github.event.sender.id == '119362912'
     runs-on: ubuntu-latest
-    #runs-on: self-hosted
     
     name: Build ${{matrix.target}}
     strategy:
@@ -67,7 +66,7 @@ jobs:
     - name: Free disk space
       uses: coder-xiaomo/free-disk-space@main
       with:
-        tool-cache: false
+        tool-cache: true
         android: true
         dotnet: true
         haskell: true
@@ -103,14 +102,17 @@ jobs:
         #   -H "Authorization: Bearer ${{ secrets.TOKEN_MGZ0227 }}" \
         #   -X POST -d '{ "query": "query {repository(owner: \"openwrt\", name: \"openwrt\") {refs(refPrefix: \"refs/tags/\", last: 4, orderBy: {field: TAG_COMMIT_DATE, direction: ASC}) {edges {node {name}}}}}"}' https://api.github.com/graphql | jq -r '.data.repository.refs.edges[].node.name' | grep v23 | tail -n 1 | sed -e 's/v//')" || true
         echo "$REPO_BRANCH"
+
             curl -fL -o sdk.tar.zst https://mirror-03.infra.openwrt.org/releases/$REPO_BRANCH/targets/x86/64/openwrt-sdk-$REPO_BRANCH-x86-64_gcc-14.3.0_musl.Linux-x86_64.tar.zst
+
 
     - name: Free up disk space
       env:
         DEBIAN_FRONTEND: noninteractive
       run: |
-        sudo mkdir -p -m 777 openwrt /mnt/openwrt/staging_dir /mnt/openwrt/build_dir /mnt/openwrt/bin  /mnt/openwrt/dl
+        sudo mkdir -p -m 777 openwrt openwrt/hostpkg /mnt/openwrt/staging_dir /mnt/openwrt/build_dir /mnt/openwrt/bin  /mnt/openwrt/dl
           ln -sf /mnt/openwrt/build_dir openwrt/build_dir
+          ln -sf ${{ github.workspace }}/openwrt/hostpkg /mnt/openwrt/build_dir/
         df -hT
     
     - name: Load custom configuration
@@ -144,13 +146,11 @@ jobs:
         cd openwrt
         cp -rf ./openwrt-sdk*/. ./ 2>/dev/null || true
         cp -rf ./openwrt-sdk*/build_dir/. ./build_dir/ || true
-        cp -rf ./openwrt-sdk*/staging_dir/. ./staging_dir/ || true
         cp -rf ../devices ./
         cp -rf devices/common/. ./
         cp -rf devices/${{matrix.target}}/. ./
         chmod -R +x devices/* || true
         sed -i '/	refresh_config();/d' scripts/feeds
-        ./scripts/feeds update -a
         find "devices/common/patches" -type f -name '*.b.patch' -print0 | sort -z | xargs -I % -t -0 -n 1 sh -c "cat '%'  | patch -d './' -p1 -E --forward --no-backup-if-mismatch"
         /bin/bash "devices/common/custom2.sh"
         if [ -f "devices/${{matrix.target}}/custom2.sh" ]; then
@@ -168,14 +168,18 @@ jobs:
         make defconfig
 
     - name: SSH connection to Actions
-      uses: kiddin9/debugger-action@master
-      if: contains(github.event.action, 'ssh')
+      uses: shaowenchen/debugger-action@main
+      if: contains(github.event.inputs.packages, 'ssh')
+      timeout-minutes: 60
+      continue-on-error: true
+      with:
+          ngrok_token: ${{ secrets.NGROK_TOKEN }}
 
     - name: Compile the firmware
       run: |
         cd openwrt
           echo -e "$(($(nproc)+1)) thread compile"
-          make -j$(($(nproc)+1)) -k || log=$(mktemp); make V=s > "$log" 2>&1; grep -q "Error 2" "$log" && tail -n 20 "$log"; rm "$log"
+          make -j$(($(nproc)+1)) -k || df -hT
         echo "status=success" >> $GITHUB_ENV
 
     - name: Check space usage
@@ -186,9 +190,15 @@ jobs:
       if: env.SSH_PRIVATE_KEY && ! contains(github.event.action, 'noser')
       with:
         SSH_PRIVATE_KEY: ${{ env.SSH_PRIVATE_KEY }}
-        ARGS: "-avzr"
-        SOURCE: "openwrt/bin/packages/"
-        REMOTE_HOST: ${{ secrets.HOST }}
-        REMOTE_PORT: ${{ secrets.PORT }}
+        ARGS: "-avzr --delete --delete-excluded --exclude-from=devices/common/rsync_exclude.list"
+        SOURCE: "openwrt/bin/packages/${{matrix.target}}/*"
+        REMOTE_HOST: ${{ secrets.SERVER_HOST }}
         REMOTE_USER: ${{ secrets.SERVER_USERNAME }}
+        REMOTE_PORT: ${{ secrets.SERVER_PORT }}
         TARGET: "/www/wwwroot/op.miaogongzi.cc/25.12/"
+        SCRIPT_AFTER: |
+          setopt KSH_GLOB
+          for pkgdir in $(ls -d /www/wwwroot/op.miaogongzi.cc/25.12/$arch/!(miaogongzi)/); do
+            cd $pkgdir
+            opkg
+          done
