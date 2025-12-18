@@ -2,17 +2,23 @@
 
 shopt -s extglob
 
-#sed -i '$a src-git miaogongzi https://github.com/mgz0227/OP-Packages.git;master' feeds.conf.default
 sed -i "/telephony/d" feeds.conf.default
+sed -i "/video/d" feeds.conf.default
 sed -i -E "s#git\.openwrt\.org/(openwrt|feed|project)#github.com/openwrt#" feeds.conf.default
 
 ./scripts/feeds update -a
 ./scripts/feeds install -a
 
+
+rm -rf package/feeds/packages/{netdata,cloudreve,smartdns,vsftpd,p910nd,aria2,ariang,coremark,watchcat,dockerd,tessdata,telegraf,oci-runtime-tools,micropython,frp}
+
 cp -f devices/common/.config .config
 
 sed -i '/WARNING: Makefile/d' scripts/package-metadata.pl
 
+sed -i "s#false; \\\#true; \\\#" include/download.mk
+
+sed -i "s/+\# \$(foreach/+\$(foreach/" devices/common/patches/luci_mk.patch
 
 cp -f devices/common/po2lmo staging_dir/host/bin/po2lmo
 chmod +x staging_dir/host/bin/po2lmo
