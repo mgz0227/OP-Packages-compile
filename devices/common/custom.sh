@@ -6,6 +6,7 @@ sed -i '$a src-git miaogongzi https://github.com/mgz0227/OP-Packages.git;master'
 sed -i "/telephony/d" feeds.conf.default
 sed -i -E "s#git\.openwrt\.org/(openwrt|feed|project)#github.com/openwrt#" feeds.conf.default
 
+./scripts/feeds update -a
 
 rm -rf feeds/miaogongzi/{diy,mt-drivers,shortcut-fe,luci-app-mtwifi,base-files,luci-app-package-manager,\
 dnsmasq,firewall*,wifi-scripts,opkg,ppp,curl,luci-app-firewall,\
@@ -13,6 +14,8 @@ nftables,fstools,wireless-regdb,libnftnl,netdata}
 rm -rf feeds/packages/libs/libcups
 
 curl -sfL https://raw.githubusercontent.com/openwrt/packages/master/lang/golang/golang/Makefile -o feeds/packages/lang/golang/golang/Makefile
+
+mv -f feeds/miaogongzi/{rust-bindgen,go-rice,gn}  feeds/packages/devel/
 
 for ipk in $(find feeds/miaogongzi/* -maxdepth 0 -type d);
 do
@@ -26,11 +29,11 @@ rm -Rf feeds/packages/!(lang|libs|devel|utils|net|multimedia)
 rm -Rf feeds/packages/libs/gnutls
 rm -Rf feeds/packages/multimedia/!(gstreamer1)
 rm -Rf feeds/packages/net/!(mosquitto|curl)
-rm -Rf feeds/base/package/firmware
-rm -Rf feeds/base/package/network/!(services|utils)
-rm -Rf feeds/base/package/network/services/!(ppp)
-rm -Rf feeds/base/package/system/!(opkg|ubus|uci|ca-certificates)
-rm -Rf feeds/base/package/kernel/!(cryptodev-linux)
+rm -Rf feeds/base_root/package/firmware
+rm -Rf feeds/base_root/package/network/!(services|utils)
+rm -Rf feeds/base_root/package/network/services/!(ppp)
+rm -Rf feeds/base_root/package/system/!(opkg|ubus|uci|ca-certificates)
+rm -Rf feeds/base_root/package/kernel/!(cryptodev-linux||bpf-headers)
 #COMMENT
 
 status=$(curl -H "Authorization: token $REPO_TOKEN" -s "https://api.github.com/repos/mgz0227/OP-Packages/actions/runs" | jq -r '.workflow_runs[0].status')
@@ -47,7 +50,8 @@ done
 rm -rf package/feeds/miaogongzi/luci-app-quickstart/root/usr/share/luci/menu.d/luci-app-quickstart.json
 
 sed -i 's/\(page\|e\)\?.acl_depends.*\?}//' `find package/feeds/miaogongzi/luci-*/luasrc/controller/* -name "*.lua"`
-# sed -i 's/\/cgi-bin\/\(luci\|cgi-\)/\/\1/g' `find package/feeds/miaogongzi/luci-*/ -name "*.lua" -or -name "*.htm*" -or -name "*.js"` &
+
+sed -i "s#false; \\\#true; \\\#" include/download.mk
 
 sed -i \
 	-e "s/+\(luci\|luci-ssl\|uhttpd\)\( \|$\)/\2/" \
@@ -64,4 +68,3 @@ sed -i '/WARNING: Makefile/d' scripts/package-metadata.pl
 
 cp -f devices/common/po2lmo staging_dir/host/bin/po2lmo
 chmod +x staging_dir/host/bin/po2lmo
-
