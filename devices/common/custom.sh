@@ -5,6 +5,7 @@ shopt -s extglob
 sed -i '$a src-git miaogongzi https://github.com/mgz0227/OP-Packages.git;master' feeds.conf.default
 sed -i "/telephony/d" feeds.conf.default
 sed -i -E "s#git\.openwrt\.org/(openwrt|feed|project)#github.com/openwrt#" feeds.conf.default
+sed -i '/	refresh_config();/d' scripts/feeds
 
 ./scripts/feeds update -a
 
@@ -26,14 +27,13 @@ done
 rm -Rf feeds/luci/{applications,collections,protocols,themes,libs,docs,contrib}
 rm -Rf feeds/luci/modules/!(luci-base)
 rm -Rf feeds/packages/!(lang|libs|devel|utils|net|multimedia)
-rm -Rf feeds/packages/libs/gnutls
 rm -Rf feeds/packages/multimedia/!(gstreamer1)
 rm -Rf feeds/packages/net/!(mosquitto|curl)
 rm -Rf feeds/base_root/package/firmware
 rm -Rf feeds/base_root/package/network/!(services|utils)
 rm -Rf feeds/base_root/package/network/services/!(ppp)
 rm -Rf feeds/base_root/package/system/!(opkg|ubus|uci|ca-certificates)
-rm -Rf feeds/base_root/package/kernel/!(cryptodev-linux||bpf-headers)
+rm -Rf feeds/base_root/package/kernel/!(cryptodev-linux||bpf-headers|mac80211)
 #COMMENT
 
 status=$(curl -H "Authorization: token $REPO_TOKEN" -s "https://api.github.com/repos/mgz0227/OP-Packages/actions/runs" | jq -r '.workflow_runs[0].status')
