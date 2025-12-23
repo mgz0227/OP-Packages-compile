@@ -17,7 +17,7 @@ on:
   #   - cron: 0 1 */1 * *
 
 env:
-  EPO_TOKEN: ${{ secrets.TOKEN_MGZ0227 }}
+  REPO_TOKEN: ${{ secrets.TOKEN_MGZ0227 }}
   PPPOE_USERNAME: ${{ secrets.PPPOE_USERNAME }}
   PPPOE_PASSWD: ${{ secrets.PPPOE_PASSWD }}
   SCKEY: ${{ secrets.SCKEY }}
@@ -84,7 +84,7 @@ jobs:
         sudo -E apt-get -qq install build-essential libncurses-dev zlib1g-dev gawk git \
         gettext libssl-dev xsltproc rsync wget unzip \
         llvm python3-pyelftools libpython3-dev aria2 jq qemu-utils rename \
-        libelf-dev libgmp3-dev libmpc-dev libfuse-dev bc autopoint cups-ppdc
+        libelf-dev libgmp3-dev libmpc-dev libfuse-dev bc autopoint cups-ppdc upx
         sudo -E apt-get -qq autoremove --purge
         sudo -E apt-get -qq clean
         sudo timedatectl set-timezone "Asia/Shanghai"
@@ -160,14 +160,11 @@ jobs:
         cp -rf devices/common/. ./
         cp -rf devices/${{matrix.target}}/. ./
         chmod -R +x devices/* || true
-        sed -i '/	refresh_config();/d' scripts/feeds
-        ./scripts/feeds update -a
-        find "devices/common/patches" -type f -name '*.b.patch' -print0 | sort -z | xargs -I % -t -0 -n 1 sh -c "cat '%'  | patch -d './' -p1 -E --forward --no-backup-if-mismatch"
         /bin/bash "devices/common/custom.sh"
         if [ -f "devices/${{matrix.target}}/custom.sh" ]; then
           /bin/bash "devices/${{matrix.target}}/custom.sh"
         fi
-        find "devices/common/patches" -type f -name '*.patch' ! -name '*.b.patch' -print0 | sort -z | xargs -I % -t -0 -n 1 sh -c "cat '%'  | patch -d './' -p1 -E --forward --no-backup-if-mismatch"
+        find "devices/common/patches" -type f -name '*.patch' -print0 | sort -z | xargs -I % -t -0 -n 1 sh -c "cat '%'  | patch -d './' -p1 -E --forward --no-backup-if-mismatch"
         if [ -n "$(ls -A "devices/${{matrix.target}}/patches" 2>/dev/null)" ]; then
           find "devices/${{matrix.target}}/patches" -type f -name '*.patch' -print0 | sort -z | xargs -I % -t -0 -n 1 sh -c "cat '%'  | patch -d './' -p1 -E --forward --no-backup-if-mismatch"
         fi
@@ -194,13 +191,13 @@ jobs:
         mv -f package/feeds/miaogongzi miaogongzi.b
         mv -f feeds/packages feeds/packages.b
         mkdir package/feeds/miaogongzi
-        cp -rf miaogongzi.b/{wxbase,lib*,rapidjson,nftables,jpcre2,toml11,gn,curl,quickjspp,qt*,libdouble*,libtorrent*,openssl,mbedtls,ppp,cups,nftables} package/feeds/miaogongzi/ || true
+        cp -rf miaogongzi.b/{wxbase,lib*,upx,rapidjson,nftables,jpcre2,toml11,gn,curl,quickjspp,qt*,libdouble*,libtorrent*,openssl,mbedtls,ppp,cups,nftables} package/feeds/miaogongzi/ || true
 
     - name: Compile the firmware
       run: |
         cd openwrt
           echo -e "$(($(nproc)+1)) thread compile"
-          fpkg="$(echo "${{github.event.action}}" | sed -e 's/\(aarch64_generic\|x86_64\|i386_pentium4\|arm_arm1176jzf-s_vfp\|aarch64_cortex-a72\|aarch64_cortex-a76\|arm_cortex-a7\|arm_cortex-a7_neon-vfpv4\|arm_cortex-a9\|arm_cortex-a15_neon-vfpv4\|arm_cortex-a5_vfpv4\|mipsel_24kc\|mips_24kc\|aarch64_cortex-a53\|arm_xscale\|arm_cortex-a9_vfpv3-d16\| [0-9][0-9.]*\| ssh\| noser\| cw\)//g' | sed -e 's/ //g')"
+          fpkg="$(echo "${{github.event.action}}" | sed -e 's/\(aarch64_generic\|x86_64\|i386_pentium4\|arm_arm1176jzf-s_vfp\|aarch64_cortex-a72\|aarch64_cortex-a76\|arm_cortex-a7\|arm_cortex-a7_neon-vfpv4\|arm_cortex-a9\|arm_cortex-a15_neon-vfpv4\|arm_cortex-a5_vfpv4\|mipsel_24kc\|mips_24kc\|aarch64_cortex-a53\|arm_xscale\|arm_cortex-a9_vfpv3-d16\|riscv64_generic\| [0-9][0-9.]*\| ssh\| noser\| cw\)//g' | sed -e 's/ //g')"
           echo "FPKG=$fpkg" >> $GITHUB_ENV
           during="$(echo "${{github.event.action}}" | grep -o -E ' [0-9][0-9.]*' | sed -e 's/ //')"
           function comp(){
@@ -260,7 +257,8 @@ jobs:
       id: organize
       run: |
         mkdir packages
-        mv -f openwrt/bin/packages/*/miaogongzi/* packages || true
+        [[ "$(echo "${{github.event.action}}" | grep "a-")" ]] ||
+          mv -f openwrt/bin/packages/*/miaogongzi/* packages || true
         mv -f openwrt/.config packages/${{matrix.target}}.config || true
         # cp -Rf openwrt/bin/packages/*/packages/python3* packages/
         # cp -Rf openwrt/bin/packages/*/luci/luci-base* packages/ || true
@@ -324,7 +322,7 @@ jobs:
       if: env.SSH_PRIVATE_KEY && ! contains(github.event.action, 'noser')
       with:
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        ARGS: "-avzr"
+        ARGS: "-avr --timeout=600"
         SOURCE: "packages/"
         REMOTE_HOST: ${{ secrets.HOST }}
         REMOTE_PORT: ${{ secrets.PORT }}
@@ -338,7 +336,8 @@ jobs:
       if: env.SSH_PRIVATE_KEY && ! contains(github.event.action, 'noser')
       with:
         SSH_PRIVATE_KEY: ${{ env.SSH_PRIVATE_KEY }}
-        ARGS: "-avzr"
+        ARGS: "-avr --timeout=600"
+        SSH_CMD_ARGS: "-o ServerAliveInterval=30 -o ServerAliveCountMax=10"
         SOURCE: "packages/"
         REMOTE_HOST: ${{ secrets.SERVER_HOST }}
         REMOTE_USER: ${{ secrets.SERVER_USERNAME }}
