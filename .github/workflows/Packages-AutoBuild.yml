@@ -191,7 +191,7 @@ jobs:
         mv -f package/feeds/miaogongzi miaogongzi.b
         mv -f feeds/packages feeds/packages.b
         mkdir package/feeds/miaogongzi
-        cp -rf miaogongzi.b/{wxbase,lib*,upx,rapidjson,nftables,jpcre2,toml11,gn,curl,quickjspp,qt*,libdouble*,libtorrent*,openssl,mbedtls,ppp,cups,nftables} package/feeds/miaogongzi/ || true
+        cp -rf miaogongzi.b/{wxbase,lib*,rapidjson,nftables,jpcre2,toml11,gn,curl,quickjspp,qt*,libdouble*,libtorrent*,openssl,mbedtls,ppp,cups,nftables} package/feeds/miaogongzi/ || true
 
     - name: Compile the firmware
       run: |
