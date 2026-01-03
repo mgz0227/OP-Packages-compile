@@ -268,7 +268,7 @@ jobs:
       continue-on-error: true
       run: |
         echo -e "墙内加速下载 🚀:\n" >> release.txt
-        echo -e "https://op.miaogongzi.cc/23.05/packages/${{matrix.target}}/ ☁)\n" >> release.txt
+        echo -e "https://op.miaogongzi.cc/25.12/packages/${{matrix.target}}/ ☁)\n" >> release.txt
 
     - name: Upload packages for release
       uses: softprops/action-gh-release@master
@@ -291,6 +291,7 @@ jobs:
       with:
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         ARGS: "-avr --timeout=600"
+        SSH_CMD_ARGS: "-o ServerAliveInterval=30 -o ServerAliveCountMax=10 -o StrictHostKeyChecking=no"
         SOURCE: "openwrt/bin/packages/*/miaogongzi/"
         REMOTE_HOST: ${{ secrets.HOST }}
         REMOTE_PORT: ${{ secrets.PORT }}
@@ -298,6 +299,7 @@ jobs:
         TARGET: "/www/wwwroot/op.miaogongzi.cc/25.12/packages/${{matrix.target}}/miaogongzi/"
         SCRIPT_AFTER: |
             bash opkg ${{matrix.target}} &
+
 
     - name: deploy files to server
       uses: easingthemes/ssh-deploy@main
@@ -310,7 +312,7 @@ jobs:
         REMOTE_HOST: ${{ secrets.SERVER_HOST }}
         REMOTE_USER: ${{ secrets.SERVER_USERNAME }}
         REMOTE_PORT: ${{ secrets.SERVER_PORT }}
-        TARGET: "/www/wwwroot/op.miaogongzi.cc/24.10/packages/${{matrix.target}}/miaogongzi/"
+        TARGET: "/www/wwwroot/op.miaogongzi.cc/25.12/packages/${{matrix.target}}/miaogongzi/"
         SCRIPT_AFTER: |
             bash opkg ${{matrix.target}} &
 
