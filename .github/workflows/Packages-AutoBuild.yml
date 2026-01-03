@@ -322,7 +322,7 @@ jobs:
       if: env.UPLOAD_FIRMWARE_FOR_ARTIFACT == 'true'
       with:
           name: ${{ env.date3 }} ${{matrix.target}}
-          path: packages
+          path: openwrt/bin/packages/*/miaogongzi/
           
     - name: Delete workflow runs
       uses: mgz0227/delete-workflow-runs@main
