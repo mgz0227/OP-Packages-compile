@@ -295,7 +295,7 @@ jobs:
         REMOTE_HOST: ${{ secrets.HOST }}
         REMOTE_PORT: ${{ secrets.PORT }}
         REMOTE_USER: ${{ secrets.SERVER_USERNAME }}
-        TARGET: "/www/wwwroot/op.miaogongzi.cc/25.12/packages/${{matrix.target}}/miaogongzi/"
+        TARGET: "/www/wwwroot/op.miaogongzi.cc/releases/25.12/${{matrix.target}}/miaogongzi/"
         SCRIPT_AFTER: |
             bash opkg ${{matrix.target}} &
 
@@ -310,7 +310,7 @@ jobs:
         REMOTE_HOST: ${{ secrets.SERVER_HOST }}
         REMOTE_USER: ${{ secrets.SERVER_USERNAME }}
         REMOTE_PORT: ${{ secrets.SERVER_PORT }}
-        TARGET: "/www/wwwroot/op.miaogongzi.cc/25.12/packages/${{matrix.target}}/miaogongzi/"
+        TARGET: "/www/wwwroot/op.miaogongzi.cc/releases/25.12/${{matrix.target}}/miaogongzi/"
         SCRIPT_AFTER: |
             bash opkg ${{matrix.target}} &
 
