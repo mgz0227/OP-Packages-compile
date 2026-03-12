@@ -269,7 +269,9 @@ jobs:
       if: env.REPO_TOKEN && env.UPLOAD_FIRMWARE_FOR_RELEASE == 'true'
       continue-on-error: true
       run: |
-        echo -e "墙内加速下载 ipk包🚀:\n" >> release.txt
+        echo -e "墙内加速下载 apk包 🚀:\n" >> release.txt
+        echo -e "https://op.miaogongzi.cc/25.12/packages/${{matrix.target}}/ ☁\n" >> release.txt
+        echo -e "墙内加速下载 ipk包 🚀:\n" >> release.txt
         echo -e "https://op.miaogongzi.cc/24.10/packages/${{matrix.target}}/ ☁\n" >> release.txt
 
     - name: Upload packages for release
