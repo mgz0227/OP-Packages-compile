@@ -191,6 +191,29 @@ jobs:
         mkdir package/feeds/miaogongzi
         mv -f miaogongzi.b/{wxbase,lib*,rapidjson,jpcre2,toml11,gn,quickjspp,qt*,libdouble*} package/feeds/miaogongzi/ || true
 
+    - name: Write custom APK keys
+      run: |
+        cd openwrt
+
+        cat > private-key.pem <<'EOF'
+        ${{ secrets.APK_PRIVATE_KEY }}
+        EOF
+
+        cat > public-key.pem <<'EOF'
+        ${{ secrets.APK_PUBLIC_KEY }}
+        EOF
+
+        chmod 600 private-key.pem
+        ls -l private-key.pem public-key.pem
+
+    - name: Check key files in TOPDIR
+      run: |
+        cd openwrt
+        pwd
+        ls -l private-key.pem public-key.pem
+        grep -E 'CONFIG_SIGNED_PACKAGES|CONFIG_PACKAGE_openwrt-keyring|CONFIG_SIGNATURE_CHECK' .config || true
+
+        
     - name: Compile the firmware
       run: |
         cd openwrt
