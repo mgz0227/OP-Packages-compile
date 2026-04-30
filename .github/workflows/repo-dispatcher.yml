@@ -13,7 +13,8 @@ on:
   #   branches:
   #     - master
   schedule:
-    - cron: 30 15 * * *
+    - cron: '30 23 * * *'
+      timezone: "Asia/Shanghai"
   watch:
     types: started
   workflow_dispatch:
